@@ -13,7 +13,7 @@ WebDriverException: Message: 'geckodriver' executable needs to be in PATH.
 ```
 The easiest way to install it is with sudo privileges, but you can also try to add the path to your bashrc file or parser the path to the webdriver explicity if you don't have it.  
 ```bash
-#download latest geckodriver from the webpage
+#download the latest geckodriver from the webpage
 wget https://github.com/mozilla/geckodriver/releases/download/v0.27.0/geckodriver-v0.27.0-linux64.tar.gz ./
 tar -xvzf geckodriver*
 sudo cp ./geckodriver-v0.27.0-linux64/geckodriver /usr/bin/
@@ -30,9 +30,11 @@ wget https://github.com/tesseract-ocr/tessdata/blob/master/chi_sim.traineddata .
 sudo mv chi_sim.traineddata /usr/share/tesseract-ocr/4.00/tessdata/
 pip install pytesseract
 ```
+## Example
 
 ## To do
 * image preprocessing
 * gift retrieval
 * plot function
 * auto login
+* add example
