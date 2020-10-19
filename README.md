@@ -1,5 +1,5 @@
 # Huya scraper
-This repository contains my python implementation of a simple huya-livestream scraper. You can also find a Chinese versin of README [here](./README_CH.md)
+This repository contains my python implementation of a simple huya-livestream scraper. You can also find a Chinese version of README [here](./README_CH.md)
 ## Installation
 Please make sure the following modules are installed:
 
