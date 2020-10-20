@@ -1,0 +1,1 @@
+/usr/bin/rclone sync --update --verbose --transfers 30 --checkers 8 --contimeout 60s --local-no-check-updated  --timeout 300s --retries 3 --low-level-retries 10 --stats 1s "/home/jiechi/workspace/github/huya_scraper/2020_10_20" "google-drive:MFen/2020_10_20"
