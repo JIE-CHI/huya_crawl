@@ -9,7 +9,44 @@ Created on Mon Oct 19 05:12:23 2020
 import time
 from selenium import webdriver
 from lxml import etree
-from datetime import datetime
+from datetime import datetime, timedelta
+from pytz import timezone, utc
+import logging
+from pathlib import Path
+
+def customTime(*args):
+        utc_dt = utc.localize(datetime.utcnow())
+        my_tz = timezone("Asia/Shanghai")
+        converted = utc_dt.astimezone(my_tz)
+        return converted.timetuple()
+
+#setup logger and with china time zone
+china_tz = timezone('Asia/Shanghai')
+now = datetime.now()
+today = now.strftime("%Y_%m_%d")
+folder = "./%s"%today
+#china_time = now + timedelta(hours=int((china_tz.utcoffset(now)).total_seconds()/3600))
+
+
+Path(folder).mkdir(parents=True, exist_ok=True)
+if Path(folder+"/stdout_0.txt").is_file():
+    flist = [p.name for p in Path(folder).iterdir() if p.is_file()]
+    filename =folder+ '/stdout_' + str( int(flist[-1].split('_')[1].split('.')[0])+1)+'.txt'
+    print(filename)
+else:
+    filename = folder+ '/stdout_0.txt'
+
+logger = logging.getLogger(__name__)  
+logger.setLevel(logging.INFO)
+
+# define file handler and set formatter
+file_handler = logging.FileHandler(filename)
+logging.Formatter.converter = customTime
+#formatter    = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
+formatter    = logging.Formatter('%(asctime)s : %(message)s',"%H:%M:%S")
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
 
 
 
@@ -39,8 +76,9 @@ class huya_info:
     def run (self):
         self.driver.get('https://www.huya.com/'+self.room_id)
         print("已成功连接房间 ： %s"%self.room_id)
+        logger.info("已成功连接房间 ： %s"%self.room_id)
         while True:
-            time.sleep(5)
+            time.sleep(10)
             now = datetime.now()
             current_time = now.strftime("%H:%M:%S")
             print("Current Time =", current_time)
@@ -55,11 +93,13 @@ class huya_info:
                 self.vip_count = page_etree.xpath('//span[@class="week-rank__btn J_rankTabVip"]/text()')[0]
                 self.vip_count = self.vip_count.split('(')[1][:-1]
                 print("[人气值 : %s]"%self.live_count)
+                logger.info("[人气值 : %s]"%self.live_count+"[贵宾数 : %s]"%self.vip_count)
                 print("[贵宾数 : %s]"%self.vip_count)
+ #               logger.info("[贵宾数 : %s]"%self.vip_count)
             except:
                 print('直播未开始或房间连接失败')
-                time.sleep(500)
+                time.sleep(600)
                     
 if __name__ == '__main__':
-     huya = huya_info(room_id = '97796', msg = True)
+     huya = huya_info(room_id = '97796', msg = False)
      huya.run()
