@@ -11,7 +11,7 @@ If you get error message as follows when running the webdriver function, it is p
 ```
 WebDriverException: Message: 'geckodriver' executable needs to be in PATH.
 ```
-The easiest way to install it is with sudo privileges, but you can also try to add the path to your bashrc file or parser the path to the webdriver explicity if you don't have it.  
+The easiest way to install it is with sudo privileges, but you can also try to add the path to your bashrc file or parse the path to the webdriver explicity if you don't have it.  
 ```bash
 #download the latest geckodriver from the webpage
 wget https://github.com/mozilla/geckodriver/releases/download/v0.27.0/geckodriver-v0.27.0-linux64.tar.gz ./
@@ -33,8 +33,7 @@ pip install pytesseract
 ## Example
 
 ## To do
-* image preprocessing
+* image preprocessing and better ocr model
 * gift retrieval
 * plot function
-* auto login
 * add example
