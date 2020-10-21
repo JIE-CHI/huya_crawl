@@ -19,7 +19,7 @@ tar -xvzf geckodriver*
 sudo cp ./geckodriver-v0.27.0-linux64/geckodriver /usr/bin/
 ```
 
-From some reason, we are intereseted to know the number of kills in each game, so we need to use OCR tools to recognise the text from the video. We tried [pytesseract](https://github.com/madmaze/pytesseract) and [cnocr] (https://github.com/breezedeus/cnocr) here, you can install either of them as follows. (cnor works better in our case.)
+From some reason, we are intereseted to know the number of kills in each game, so we need to use OCR tools to recognise the text from the video. We tried [pytesseract](https://github.com/madmaze/pytesseract) and [cnocr](https://github.com/breezedeus/cnocr) here, you can install either of them as follows. (cnor works better in our case.)
 
 ```bash
 sudo apt-get install tesseract-ocr
