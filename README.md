@@ -35,7 +35,7 @@ pip install pytesseract
 ## Example
 
 ## To do
-* gift retrieval
+* more intelligent gift-msg
 * plot function
 * add example
 * train my own OCR model
