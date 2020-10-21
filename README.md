@@ -19,12 +19,14 @@ tar -xvzf geckodriver*
 sudo cp ./geckodriver-v0.27.0-linux64/geckodriver /usr/bin/
 ```
 
-From some reason, we are intereseted to know the number of kills in each game, so we use tesseract to recognise the text from the video.
+From some reason, we are intereseted to know the number of kills in each game, so we need to use OCR tools to recognise the text from the video. We tried [pytesseract](https://github.com/madmaze/pytesseract) and [cnocr] (https://github.com/breezedeus/cnocr) here, you can install either of them as follows. (cnor works better in our case.)
 
 ```bash
 sudo apt-get install tesseract-ocr
+
+pip install cnocr
 ```
-As we are working with Chinese characters, we also need to download the language specific data and move it to /usr/share/tesseract-ocr/4.00/tessdata/
+As we are working with Chinese characters, we also need to download the language specific data. Cnocr downloads it automatically the first time you use it, but for pytesseract you need to download it yourself and move it to /usr/share/tesseract-ocr/4.00/tessdata/
 ```bash
 wget https://github.com/tesseract-ocr/tessdata/blob/master/chi_sim.traineddata ./
 sudo mv chi_sim.traineddata /usr/share/tesseract-ocr/4.00/tessdata/
@@ -33,7 +35,7 @@ pip install pytesseract
 ## Example
 
 ## To do
-* image preprocessing and better ocr model
 * gift retrieval
 * plot function
 * add example
+* train my own OCR model
