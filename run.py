@@ -20,13 +20,14 @@ import mxnet as mx
 from cnocr import CnOcr
 import cv2 as cv
 import os
-
+import json
+from collections import defaultdict
 def recoginse_text(image,ocr1):
     #image preprocessing
     gray = cv.cvtColor(image,cv.COLOR_BGR2GRAY)
 
     ret,binary = cv.threshold(gray,0,255,cv.THRESH_BINARY_INV| cv.THRESH_OTSU)
-    kernel = cv.getStructuringElement(cv.MORPH_RECT,(1,2))  #
+    kernel = cv.getStructuringElement(cv.MORPH_RECT,(1,2))  
     morph1 = cv.morphologyEx(binary,cv.MORPH_OPEN,kernel)
     kernel = cv.getStructuringElement(cv.MORPH_RECT, (2, 1)) 
     morph2 = cv.morphologyEx(morph1,cv.MORPH_OPEN,kernel)
@@ -49,12 +50,15 @@ def customTime(*args):
         converted = utc_dt.astimezone(china_tz)
         return converted.timetuple()
 
-def logger_setup():
+def logger_setup(debug):
     #setup logger and with china time zone
     
     now = datetime.now()
     today = now.strftime("%Y_%m_%d")
-    folder = "./%s"%today
+    if debug:
+        folder = "./test/%s"%today
+    else:
+        folder = "./%s"%today
     Path(folder).mkdir(parents=True, exist_ok=True)
     if Path(folder+"/stdout_0.txt").is_file():
         flist = sorted(Path(folder).iterdir(), key=os.path.getmtime)
@@ -64,13 +68,13 @@ def logger_setup():
         filename = folder+ '/stdout_0.txt'
 
     logger = logging.getLogger(__name__)  
-#    logger.disabled = True
+    if debug:
+        logger.disabled = True
     logger.setLevel(logging.INFO)
 
     # define file handler and set formatter
     file_handler = logging.FileHandler(filename,encoding='utf-8')
     logging.Formatter.converter = customTime
-    #formatter    = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
     formatter    = logging.Formatter('%(asctime)s : %(message)s',"%H:%M:%S")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -80,7 +84,8 @@ def logger_setup():
 
 
 class huya_info:
-    def __init__ (self, room_id='97796', msg=False):
+    def __init__ (self, room_id='97796', msg=False, debug=True):
+        #autoplay doesn't work here.
         profile = webdriver.FirefoxProfile()
         profile.set_preference("media.autoplay.enabled", True)
         self.driver = webdriver.Firefox(firefox_profile=profile)
@@ -89,7 +94,9 @@ class huya_info:
         self.vip_count = 0
         self.msg = msg
         self.soup = BeautifulSoup()
-        self.logger = logger_setup()
+        self.logger = logger_setup(debug)
+        with open('gift_price.txt') as json_file:
+            self.gift_prices = json.load(json_file)
         
     def get_numofkill (self,ocr1):
         #mixmize windows and turn off danmu
@@ -114,18 +121,44 @@ class huya_info:
         text = recoginse_text(img, ocr1)
         return text
     
-    def gift_info (self, gift=None):
-        
+    def gift_msg (self):
+        with open('gift_price.txt') as json_file:
+            gift_price = json.load(json_file)
+        self.driver.get('https://www.huya.com/'+self.room_id)
+        print("已成功连接房间 ： %s"%self.room_id)
+        self.logger.info("已成功连接房间 ： %s"%self.room_id)
+        self.login()
+        msg_usr=[]
+        while True:
+            self.soup = BeautifulSoup(self.driver.page_source,features="lxml")
 #        soup.findAll("div", {"class": "msg-normal"})
-        gift_list = self.soup.findAll("div", {"class": "tit-h-send"})
-        new_gift = None
-        for i in gift_list:
-            if int(re.findall('\d+', i.text)[-1])>5:
-                return (True, new_gift)
-        return (False,new_gift)
+            gift_list = self.soup.findAll("div", {"class": "tit-h-send"})
+            gift_dict=defaultdict(int)
+            
+            for gift in gift_list:
+                user_name = gift.find_all('span',{'class':'cont-item name J_userMenu'})[0].text
+                gift_price = self.gift_prices[gift.find_all('img')[0]['alt']] 
+                gift_count1 = gift.find_all('span',{'class':'cont-item'})[3].text
+                try:
+                    gift_count2 = gift.find_all('span',{'class':'cont-item send-comb'})[0].text[0:-2]
+                    gift_price = gift_price * int(gift_count1) * int(gift_count2)
+                    gift_dict[user_name] = gift_price
+                except:
+                    gift_count2 = 1
+                    gift_price = gift_price * int(gift_count1) + gift_dict[user_name]
+                    gift_dict[user_name] = gift_price
+                print("%s送了%s"%(user_name,gift_price))
+#    gift_dict.update({user_name:gift_price})
+                if gift_price > 50 and not (user_name in msg_usr):
+                    self.send_msg ('哇')
+                    msg_usr.append(user_name)
+                    if len(msg_usr) > 10:
+                        msg_usr=[]
+        #         return (True, new_gift)
+        # return (False,new_gift)
         
     def login (self):
-        time.sleep(10)
+        time.sleep(5)
         #you can log into your account by loading the cookies
         if Path("./cookies.pkl").is_file():
             cookies = pickle.load(open("cookies.pkl", "rb"))
@@ -133,7 +166,8 @@ class huya_info:
                 self.driver.add_cookie(cookie)
             self.driver.refresh()
         else:
-            # you have to use huya app to login at the first time
+            # the codes here work with password login, but 
+            # sometimes you have to use huya app to scan the QR code at the first time
             self.driver.find_element_by_id("nav-login").click()
             self.driver.switch_to.frame("UDBSdkLgn_iframe")
             self.driver.find_element_by_class_name("input-login").click()
@@ -144,7 +178,7 @@ class huya_info:
     def send_msg (self, msg):
         input_text = self.driver.find_element_by_id('pub_msg_input')
         input_text.send_keys(msg)
-#        time.sleep(2)
+        time.sleep(2)
         send_btn = self.driver.find_element_by_id('msg_send_bt')
         send_btn.click()
 
@@ -152,7 +186,10 @@ class huya_info:
         self.driver.get('https://www.huya.com/'+self.room_id)
         print("已成功连接房间 ： %s"%self.room_id)
         self.logger.info("已成功连接房间 ： %s"%self.room_id)
+        #the alphabet set we need
         ocr1 = CnOcr(cand_alphabet=['0','1','2','3','4','5','6','7','8','9','淘','汰','剩','余'])
+        self.login()
+        gameinfo = '[无淘汰数据]'
         while True:
             time.sleep(15)
             now = datetime.now()
@@ -175,16 +212,17 @@ class huya_info:
 
                 gameinfo = self.get_numofkill(ocr1)
                 print("[人气值 : %s]"%self.live_count)
-                self.logger.info("[人气值 : %s]"%self.live_count+"[贵宾数 : %s]"%self.vip_count)
                 self.logger.info("[人气值 : %s]"%self.live_count+"[贵宾数 : %s]"%self.vip_count+gameinfo)
                 print("[贵宾数 : %s]"%self.vip_count)
                 print(gameinfo)
  
             except:
                 print('直播未开始或房间连接失败')
-                time.sleep(10)
-#                self.driver.refresh()
+                time.sleep(60)
+                self.driver.refresh()
+            
                     
 if __name__ == '__main__':
-     huya = huya_info(room_id = '97796', msg = False)
-     huya.run()
+     huya = huya_info(room_id = '97796', msg = False, debug = True)
+     #huya.run()
+     huya.gift_msg()
