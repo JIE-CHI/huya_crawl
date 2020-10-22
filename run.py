@@ -14,13 +14,13 @@ import logging
 from pathlib import Path
 import pickle
 from bs4 import BeautifulSoup
-import re
 from PIL import Image
 import mxnet as mx
 from cnocr import CnOcr
 import cv2 as cv
 import os
 import json
+import re
 from collections import defaultdict
 def recoginse_text(image,ocr1):
     #image preprocessing
@@ -39,6 +39,10 @@ def recoginse_text(image,ocr1):
         text=text[0]
         rem_num = ''.join(text[text.index('余')+1:text.index('汰')-1])
         kill_num = ''.join(text[text.index('汰')+1:])
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        Path("./test_croped.png").rename("./images/%s_rem%s_kill_%s"%(current_time,rem_num,kill_num))
+
         return "[剩余 : %s "%rem_num + "淘汰 : %s]"%kill_num
     except:
         print ('无淘汰数据')
@@ -122,38 +126,85 @@ class huya_info:
         return text
     
     def gift_msg (self):
+        now = datetime.now()
+        today = now.strftime("%Y_%m_%d")
         with open('gift_price.txt') as json_file:
-            gift_price = json.load(json_file)
+            gift_prices = json.load(json_file)
         self.driver.get('https://www.huya.com/'+self.room_id)
         print("已成功连接房间 ： %s"%self.room_id)
         self.logger.info("已成功连接房间 ： %s"%self.room_id)
         self.login()
         msg_usr=[]
+        id_list=[]
+        gift_dict=defaultdict(int)
+        fout = open("test/%s/msg.txt"%today,'a',buffering=1) 
         while True:
             self.soup = BeautifulSoup(self.driver.page_source,features="lxml")
 #        soup.findAll("div", {"class": "msg-normal"})
-            gift_list = self.soup.findAll("div", {"class": "tit-h-send"})
-            gift_dict=defaultdict(int)
+#            gift_list = self.soup.findAll("div", {"class": "tit-h-send"})
+            #document what people usually say when watching livestream
+            data_list = self.soup.findAll("li", {"class": re.compile("J_msg")})
+                                       
+#             for gift in gift_list:
+#                 user_name = gift.find_all('span',{'class':'cont-item name J_userMenu'})[0].text
+#                 gift_price = self.gift_prices[gift.find_all('img')[0]['alt']] 
+#                 gift_count1 = gift.find_all('span',{'class':'cont-item'})[3].text
+#                 try:
+#                     gift_count2 = gift.find_all('span',{'class':'cont-item send-comb'})[0].text[0:-2]
+#                     gift_price = gift_price * int(gift_count1) * int(gift_count2)
+#                     gift_dict[user_name] = gift_price
+#                 except:
+#                     gift_count2 = 1
+#                     gift_price = gift_price * int(gift_count1) + gift_dict[user_name]
+#                     gift_dict[user_name] = gift_price
+#                 print("%s送了%s"%(user_name,gift_price))
+# #    gift_dict.update({user_name:gift_price})
+#                 if gift_price > 50 and not (user_name in msg_usr):
+#                     self.send_msg ('哇哇')
+#                     msg_usr.append(user_name)
+                    
+            #msg = self.soup.findAll("div", {"class": re.compile("msg-nobleSpeak box-noble-level-*|msg-normal")})          
+#            print(data_list)
+            for i in data_list:
+                if not i['data-id'] in id_list:
+                    id_list.append(i['data-id'])
             
-            for gift in gift_list:
-                user_name = gift.find_all('span',{'class':'cont-item name J_userMenu'})[0].text
-                gift_price = self.gift_prices[gift.find_all('img')[0]['alt']] 
-                gift_count1 = gift.find_all('span',{'class':'cont-item'})[3].text
-                try:
-                    gift_count2 = gift.find_all('span',{'class':'cont-item send-comb'})[0].text[0:-2]
-                    gift_price = gift_price * int(gift_count1) * int(gift_count2)
-                    gift_dict[user_name] = gift_price
-                except:
-                    gift_count2 = 1
-                    gift_price = gift_price * int(gift_count1) + gift_dict[user_name]
-                    gift_dict[user_name] = gift_price
-                print("%s送了%s"%(user_name,gift_price))
-#    gift_dict.update({user_name:gift_price})
-                if gift_price > 50 and not (user_name in msg_usr):
-                    self.send_msg ('哇')
-                    msg_usr.append(user_name)
-                    if len(msg_usr) > 10:
-                        msg_usr=[]
+                    if i.find("div", {"class": "tit-h-send"}):
+                        user_name = i.find('span',{'class':'cont-item name J_userMenu'}).text
+                        gift_price = self.gift_prices[i.find('img')['alt']] 
+                        gift_count1 = i.find_all('span',{'class':'cont-item'})[3].text
+                        try:
+                            gift_count2 = i.find_all('span',{'class':'cont-item send-comb'})[0].text[0:-2]
+                            current_price=0
+                        except:
+                            gift_count2 = 1
+                            current_price = gift_dict[user_name]
+                        gift_price = gift_price * int(gift_count1) * int(gift_count2) + current_price
+                        gift_dict[user_name] = gift_price
+                        print("%s送了%s"%(user_name,gift_price))
+                        if gift_price > 50 and not (user_name in msg_usr):
+                            self.send_msg ('哇哇')
+                            msg_usr.append(user_name)
+                            if len(msg_usr) > 5:
+                                msg_usr=[]
+                                gift_dict=defaultdict(int)
+                    elif i.find("div", {"class": re.compile("msg-nobleSpeak box-noble-level-*|msg-normal")}):
+                        
+                        id_msg = i.find('span',{'class':'msg'}).text
+                        
+                        if '猪猪' in id_msg:
+                            for emoji in i.find('span',{'class':'msg'}).find_all('img'):
+                                if emoji['alt'] == "[亲亲]":
+                                    self.send_msg ('[亲亲][亲亲]')
+                        if re.search('什么.*手机' , id_msg):
+                            self.send_msg ('手机: iPhone 11 Pro Max')
+                        if re.search('什么.*耳机' , id_msg):
+                            self.send_msg ('耳机: 金士顿云雀')
+                        print(id_msg)
+                        
+                        fout.writelines(id_msg)
+                        fout.writelines("\n")
+                        fout.flush()
         #         return (True, new_gift)
         # return (False,new_gift)
         
@@ -178,7 +229,7 @@ class huya_info:
     def send_msg (self, msg):
         input_text = self.driver.find_element_by_id('pub_msg_input')
         input_text.send_keys(msg)
-        time.sleep(2)
+        time.sleep(1)
         send_btn = self.driver.find_element_by_id('msg_send_bt')
         send_btn.click()
 
@@ -191,7 +242,7 @@ class huya_info:
         self.login()
         gameinfo = '[无淘汰数据]'
         while True:
-            time.sleep(15)
+            time.sleep(10)
             now = datetime.now()
             current_time = now.strftime("%H:%M:%S")
             print("Current Time =", current_time)
