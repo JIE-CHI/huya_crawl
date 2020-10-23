@@ -40,8 +40,10 @@ def recoginse_text(image,ocr1):
         rem_num = ''.join(text[text.index('余')+1:text.index('汰')-1])
         kill_num = ''.join(text[text.index('汰')+1:])
         now = datetime.now()
+        today = now.strftime("%Y_%m_%d")
         current_time = now.strftime("%H:%M:%S")
-        Path("./test_croped.png").rename("./images/%s_rem%s_kill_%s"%(current_time,rem_num,kill_num))
+        Path("./images_%s"%today).mkdir(parents=True, exist_ok=True)
+        Path("./test_croped.png").rename("./images_%s/%s_rem%s_kill_%s"%(today,current_time,rem_num,kill_num))
 
         return "[剩余 : %s "%rem_num + "淘汰 : %s]"%kill_num
     except:
@@ -125,11 +127,9 @@ class huya_info:
         text = recoginse_text(img, ocr1)
         return text
     
-    def gift_msg (self):
+    def gift_msg (self, autoreply=True):
         now = datetime.now()
         today = now.strftime("%Y_%m_%d")
-        with open('gift_price.txt') as json_file:
-            gift_prices = json.load(json_file)
         self.driver.get('https://www.huya.com/'+self.room_id)
         print("已成功连接房间 ： %s"%self.room_id)
         self.logger.info("已成功连接房间 ： %s"%self.room_id)
@@ -137,41 +137,30 @@ class huya_info:
         msg_usr=[]
         id_list=[]
         gift_dict=defaultdict(int)
-        fout = open("test/%s/msg.txt"%today,'a',buffering=1) 
+        msg_folder = "./msgs/%s"%today
+        Path(msg_folder).mkdir(parents=True, exist_ok=True)
+        fout = open("msgs/%s/msg.txt"%today,'a',buffering=1) 
+        count_66 = [0,now ]
+        count_haha = [0,now ] 
+        count_pei = [0,now ] 
         while True:
+            now = datetime.now()
+            tag = now.strftime("%H:%M:%S")
             self.soup = BeautifulSoup(self.driver.page_source,features="lxml")
-#        soup.findAll("div", {"class": "msg-normal"})
-#            gift_list = self.soup.findAll("div", {"class": "tit-h-send"})
+
             #document what people usually say when watching livestream
             data_list = self.soup.findAll("li", {"class": re.compile("J_msg")})
                                        
-#             for gift in gift_list:
-#                 user_name = gift.find_all('span',{'class':'cont-item name J_userMenu'})[0].text
-#                 gift_price = self.gift_prices[gift.find_all('img')[0]['alt']] 
-#                 gift_count1 = gift.find_all('span',{'class':'cont-item'})[3].text
-#                 try:
-#                     gift_count2 = gift.find_all('span',{'class':'cont-item send-comb'})[0].text[0:-2]
-#                     gift_price = gift_price * int(gift_count1) * int(gift_count2)
-#                     gift_dict[user_name] = gift_price
-#                 except:
-#                     gift_count2 = 1
-#                     gift_price = gift_price * int(gift_count1) + gift_dict[user_name]
-#                     gift_dict[user_name] = gift_price
-#                 print("%s送了%s"%(user_name,gift_price))
-# #    gift_dict.update({user_name:gift_price})
-#                 if gift_price > 50 and not (user_name in msg_usr):
-#                     self.send_msg ('哇哇')
-#                     msg_usr.append(user_name)
-                    
-            #msg = self.soup.findAll("div", {"class": re.compile("msg-nobleSpeak box-noble-level-*|msg-normal")})          
-#            print(data_list)
             for i in data_list:
                 if not i['data-id'] in id_list:
                     id_list.append(i['data-id'])
             
                     if i.find("div", {"class": "tit-h-send"}):
                         user_name = i.find('span',{'class':'cont-item name J_userMenu'}).text
-                        gift_price = self.gift_prices[i.find('img')['alt']] 
+                        if i.find('img')['alt'] in self.gift_prices:
+                            gift_price = self.gift_prices[i.find('img')['alt']] 
+                        else:
+                            gift_price = 0.1
                         gift_count1 = i.find_all('span',{'class':'cont-item'})[3].text
                         try:
                             gift_count2 = i.find_all('span',{'class':'cont-item send-comb'})[0].text[0:-2]
@@ -183,8 +172,11 @@ class huya_info:
                         gift_dict[user_name] = gift_price
                         print("%s送了%s"%(user_name,gift_price))
                         if gift_price > 50 and not (user_name in msg_usr):
-                            self.send_msg ('哇哇')
-                            msg_usr.append(user_name)
+                            try:
+                                self.send_msg ('哇哇')
+                                msg_usr.append(user_name)
+                            except:
+                                pass
                             if len(msg_usr) > 5:
                                 msg_usr=[]
                                 gift_dict=defaultdict(int)
@@ -192,24 +184,60 @@ class huya_info:
                         
                         id_msg = i.find('span',{'class':'msg'}).text
                         
-                        if '猪猪' in id_msg:
-                            for emoji in i.find('span',{'class':'msg'}).find_all('img'):
-                                if emoji['alt'] == "[亲亲]":
-                                    self.send_msg ('[亲亲][亲亲]')
-                        if re.search('什么.*手机' , id_msg):
-                            self.send_msg ('手机: iPhone 11 Pro Max')
-                        if re.search('什么.*耳机' , id_msg):
-                            self.send_msg ('耳机: 金士顿云雀')
-                        print(id_msg)
+                        if re.search('什么.*手机' , id_msg) or re.search('啥.*手机' , id_msg):
+                            try:
+                                self.send_msg ('主播手机: iPhone 11 Pro Max')
+                            except:
+                                pass
                         
-                        fout.writelines(id_msg)
+                        if re.search('什么.*耳机' , id_msg):
+                            try:
+                                self.send_msg ('主播耳机: 金士顿云雀')
+                            except:
+                                pass
+                        elif re.search('猪猪' , id_msg):
+                            try:
+                                self.send_msg ('[疑问][疑问][疑问]')
+                            except:
+                                pass
+                        elif re.search('666' , id_msg) and not i.find('span',{'class':'name J_userMenu'}).text == '【米粉】店小二':
+                            count_66[0] += 1
+                            if count_66[0] > 3 and (datetime.now() - count_66[1]).total_seconds() > 20 :
+                                try:
+                                    self.send_msg ('666[赞][赞][赞]')
+                                    count_66[0]=0
+                                    count_66[1]=datetime.now()
+                                except:
+                                    pass
+                            
+                        elif re.search('哈哈哈' , id_msg):
+                            count_haha[0] += 1
+                            if count_haha[0] > 3 and  (datetime.now() - count_haha[1]).total_seconds() > 20:
+                                try:
+                                    self.send_msg ('哈哈哈哈哈哈')
+                                    count_haha[0]=0
+                                    count_haha[1]=datetime.now()
+                                except:
+                                    pass
+                        elif re.search('呸呸呸呸' , id_msg):
+                            count_pei[0] += 1
+                            if count_pei[0] > 3 and  (datetime.now() - count_haha[1]).total_seconds() > 20:
+                                try:
+                                    self.send_msg ('呸呸呸呸')
+                                    count_pei[0]=0
+                                    count_pei[1]=datetime.now()
+                                except:
+                                    pass
+                        print("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
+                        
+                        fout.writelines("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
                         fout.writelines("\n")
                         fout.flush()
         #         return (True, new_gift)
         # return (False,new_gift)
         
     def login (self):
-        time.sleep(5)
+        time.sleep(2)
         #you can log into your account by loading the cookies
         if Path("./cookies.pkl").is_file():
             cookies = pickle.load(open("cookies.pkl", "rb"))
@@ -229,7 +257,7 @@ class huya_info:
     def send_msg (self, msg):
         input_text = self.driver.find_element_by_id('pub_msg_input')
         input_text.send_keys(msg)
-        time.sleep(1)
+#        time.sleep(1)
         send_btn = self.driver.find_element_by_id('msg_send_bt')
         send_btn.click()
 
@@ -274,6 +302,6 @@ class huya_info:
             
                     
 if __name__ == '__main__':
-     huya = huya_info(room_id = '97796', msg = False, debug = True)
-     #huya.run()
-     huya.gift_msg()
+      huya = huya_info(room_id = '97796', msg = False, debug = True)
+      #huya.run()
+      huya.gift_msg()
