@@ -22,6 +22,10 @@ import os
 import json
 import re
 from collections import defaultdict
+import random 
+import numpy 
+
+
 def recoginse_text(image,ocr1):
     #image preprocessing
     gray = cv.cvtColor(image,cv.COLOR_BGR2GRAY)
@@ -152,6 +156,7 @@ class huya_info:
             data_list = self.soup.findAll("li", {"class": re.compile("J_msg")})
                                        
             for i in data_list:
+                ci = random.choice([2,3,4])
                 if not i['data-id'] in id_list:
                     id_list.append(i['data-id'])
             
@@ -173,7 +178,7 @@ class huya_info:
                         print("%s送了%s"%(user_name,gift_price))
                         if gift_price > 50 and not (user_name in msg_usr):
                             try:
-                                self.send_msg ('哇哇')
+                                self.send_msg ('哇'*ci)
                                 msg_usr.append(user_name)
                             except:
                                 pass
@@ -184,22 +189,38 @@ class huya_info:
                         
                         id_msg = i.find('span',{'class':'msg'}).text
                         
-                        if re.search('什么.*手机' , id_msg) or re.search('啥.*手机' , id_msg):
+                        if re.search('什么.*手机(?!壳)' , id_msg) or re.search('啥.*手机(?!壳)' , id_msg):
                             try:
                                 self.send_msg ('主播手机: iPhone 11 Pro Max')
                             except:
                                 pass
                         
-                        if re.search('什么.*耳机' , id_msg):
+                        if re.search('什么.*耳机' , id_msg) or re.search('啥.*耳机' , id_msg):
                             try:
                                 self.send_msg ('主播耳机: 金士顿云雀')
                             except:
                                 pass
                         elif re.search('猪猪' , id_msg):
-                            try:
-                                self.send_msg ('[疑问][疑问][疑问]')
-                            except:
-                                pass
+                            msg_usrname=i.find('span',{'class':'name J_userMenu'}).text
+                            if msg_usrname == '【米粉】甜筒很机智' or msg_usrname == '【米粉】卡卡西很坚强':
+                                try:                                    
+                                    self.send_msg ('[亲亲]'*ci)                                
+                                except:
+                                    pass
+                            
+                            else:
+                                try:
+                                    # kkk = numpy.random.choice([1,2,3], p=[0.2,0.5,0.3])
+                                    # if kkk == 1 :
+                                    #     self.send_msg('[疑问]'*ci)
+                                    # elif kkk==2:
+                                    #     self.send_msg2 ('[疑问]')
+                                    # else:
+                                    #     self.send_msg('[流汗]'*ci)
+                                    pass
+                                except:
+                                    pass
+                                
                         elif re.search('666' , id_msg) and not i.find('span',{'class':'name J_userMenu'}).text == '【米粉】店小二':
                             count_66[0] += 1
                             if count_66[0] > 3 and (datetime.now() - count_66[1]).total_seconds() > 20 :
@@ -214,16 +235,16 @@ class huya_info:
                             count_haha[0] += 1
                             if count_haha[0] > 3 and  (datetime.now() - count_haha[1]).total_seconds() > 20:
                                 try:
-                                    self.send_msg ('哈哈哈哈哈哈')
+                                    self.send_msg ('哈哈'*ci)
                                     count_haha[0]=0
                                     count_haha[1]=datetime.now()
                                 except:
                                     pass
                         elif re.search('呸呸呸呸' , id_msg):
                             count_pei[0] += 1
-                            if count_pei[0] > 3 and  (datetime.now() - count_haha[1]).total_seconds() > 20:
+                            if count_pei[0] > 3 and  (datetime.now() - count_pei[1]).total_seconds() > 20:
                                 try:
-                                    self.send_msg ('呸呸呸呸')
+                                    self.send_msg ('呸呸'*ci)
                                     count_pei[0]=0
                                     count_pei[1]=datetime.now()
                                 except:
@@ -237,7 +258,7 @@ class huya_info:
         # return (False,new_gift)
         
     def login (self):
-        time.sleep(2)
+        time.sleep(10)
         #you can log into your account by loading the cookies
         if Path("./cookies.pkl").is_file():
             cookies = pickle.load(open("cookies.pkl", "rb"))
@@ -248,10 +269,13 @@ class huya_info:
             # the codes here work with password login, but 
             # sometimes you have to use huya app to scan the QR code at the first time
             self.driver.find_element_by_id("nav-login").click()
+            time.sleep(30)
             self.driver.switch_to.frame("UDBSdkLgn_iframe")
+            time.sleep(10)
             self.driver.find_element_by_class_name("input-login").click()
             self.driver.find_element_by_xpath('//div[@class="udb-input-item"]//input[@placeholder="手机号/虎牙号"]').send_keys("***")
-            self.driver.find_element_by_xpath("//input[@placeholder='密码']").send_keys("****")
+            self.driver.find_element_by_xpath("//input[@placeholder='密码']").send_keys("***")
+            
             self.driver.find_element_by_id("login-btn").click()
             pickle.dump(self.driver.get_cookies() , open("cookies.pkl","wb"))
     def send_msg (self, msg):
@@ -260,7 +284,25 @@ class huya_info:
 #        time.sleep(1)
         send_btn = self.driver.find_element_by_id('msg_send_bt')
         send_btn.click()
-
+        #if send is not allowed, the msg will be cleared
+        self.driver.find_element_by_id('pub_msg_input').clear()
+    def send_msg2 (self, msg):
+        JS_ADD_TEXT_TO_INPUT = """
+        var elm = arguments[0], txt = arguments[1];
+        elm.value += txt;
+        elm.dispatchEvent(new Event('change'));
+        """
+        text = u'\ud83d\udc4a'
+        
+        input_text = self.driver.find_element_by_id('pub_msg_input')
+        self.driver.execute_script(JS_ADD_TEXT_TO_INPUT, input_text, text)
+        input_text.send_keys('[猪头]')
+#        time.sleep(1)
+        self.driver.execute_script(JS_ADD_TEXT_TO_INPUT, input_text, text)
+        send_btn = self.driver.find_element_by_id('msg_send_bt')
+        send_btn.click()
+        #if send is not allowed, the msg will be cleared
+        self.driver.find_element_by_id('pub_msg_input').clear()
     def run (self):
         self.driver.get('https://www.huya.com/'+self.room_id)
         print("已成功连接房间 ： %s"%self.room_id)
