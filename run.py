@@ -23,9 +23,12 @@ import json
 import re
 from collections import defaultdict
 import random 
-import numpy 
+from selenium.webdriver.firefox.options import Options
+import sched, time
 
 
+    
+    
 def recoginse_text(image,ocr1):
     #image preprocessing
     gray = cv.cvtColor(image,cv.COLOR_BGR2GRAY)
@@ -94,11 +97,13 @@ def logger_setup(debug):
 
 
 class huya_info:
-    def __init__ (self, room_id='97796', msg=False, debug=True):
+    def __init__ (self, room_id='97796', msg=False, debug=True，headless=False):
         #autoplay doesn't work here.
         profile = webdriver.FirefoxProfile()
+        options = Options()
+        options.headless = headless
         profile.set_preference("media.autoplay.enabled", True)
-        self.driver = webdriver.Firefox(firefox_profile=profile)
+        self.driver = webdriver.Firefox(options=options,firefox_profile=profile)
         self.room_id = room_id
         self.live_count = 0
         self.vip_count = 0
@@ -208,8 +213,9 @@ class huya_info:
                                 except:
                                     pass
                             
-                            else:
+                            elif msg_usrname == '【米粉】CP然' or msg_usrname == '【米粉】Rose肉丝':
                                 try:
+                                    self.send_msg ('[亲亲]'*ci)
                                     # kkk = numpy.random.choice([1,2,3], p=[0.2,0.5,0.3])
                                     # if kkk == 1 :
                                     #     self.send_msg('[疑问]'*ci)
@@ -308,9 +314,9 @@ class huya_info:
         print("已成功连接房间 ： %s"%self.room_id)
         self.logger.info("已成功连接房间 ： %s"%self.room_id)
         #the alphabet set we need
-        ocr1 = CnOcr(cand_alphabet=['0','1','2','3','4','5','6','7','8','9','淘','汰','剩','余'])
-        self.login()
-        gameinfo = '[无淘汰数据]'
+#        ocr1 = CnOcr(cand_alphabet=['0','1','2','3','4','5','6','7','8','9','淘','汰','剩','余'])
+#        self.login()
+#        gameinfo = '[无淘汰数据]'
         while True:
             time.sleep(10)
             now = datetime.now()
@@ -331,11 +337,12 @@ class huya_info:
                 self.vip_count = self.soup.findAll("span", {"class": "week-rank__btn J_rankTabVip"})[0].text
                 self.vip_count = self.vip_count.split('(')[1][:-1]
 
-                gameinfo = self.get_numofkill(ocr1)
+#                gameinfo = self.get_numofkill(ocr1)
                 print("[人气值 : %s]"%self.live_count)
-                self.logger.info("[人气值 : %s]"%self.live_count+"[贵宾数 : %s]"%self.vip_count+gameinfo)
+                self.logger.info("[人气值 : %s]"%self.live_count+"[贵宾数 : %s]"%self.vip_count)
+#                self.logger.info("[人气值 : %s]"%self.live_count+"[贵宾数 : %s]"%self.vip_count+gameinfo)
                 print("[贵宾数 : %s]"%self.vip_count)
-                print(gameinfo)
+#                print(gameinfo)
  
             except:
                 print('直播未开始或房间连接失败')
@@ -344,6 +351,11 @@ class huya_info:
             
                     
 if __name__ == '__main__':
-      huya = huya_info(room_id = '97796', msg = False, debug = True)
+    end_dt = datetime.strptime(time.strftime("11:0:0"), '%H:%M:%S')
+    now = datetime.now()
+    a = customTime(now)        
+    start_dt = datetime.strptime(time.strftime('%H:%M:%S', a), '%H:%M:%S')
+    time.sleep((end_dt - start_dt).total_seconds())
+    huya = huya_info(room_id = '97796', msg = False, debug = True)
       #huya.run()
-      huya.gift_msg()
+    huya.gift_msg()
