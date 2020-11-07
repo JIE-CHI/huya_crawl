@@ -97,7 +97,7 @@ def logger_setup(debug):
 
 
 class huya_info:
-    def __init__ (self, room_id='97796', msg=False, debug=True，headless=False):
+    def __init__ (self, room_id='97796', msg=False, debug=True, headless=False):
         #autoplay doesn't work here.
         profile = webdriver.FirefoxProfile()
         options = Options()
@@ -152,7 +152,9 @@ class huya_info:
         count_66 = [0,now ]
         count_haha = [0,now ] 
         count_pei = [0,now ] 
-        while True:
+        linmindu = now
+        live_close=False
+        while (not live_close):
             now = datetime.now()
             tag = now.strftime("%H:%M:%S")
             self.soup = BeautifulSoup(self.driver.page_source,features="lxml")
@@ -205,31 +207,33 @@ class huya_info:
                                 self.send_msg ('主播耳机: 金士顿云雀')
                             except:
                                 pass
-                        elif re.search('猪猪' , id_msg):
-                            msg_usrname=i.find('span',{'class':'name J_userMenu'}).text
-                            if msg_usrname == '【米粉】甜筒很机智' or msg_usrname == '【米粉】卡卡西很坚强':
-                                try:                                    
-                                    self.send_msg ('[亲亲]'*ci)                                
-                                except:
-                                    pass
-                            
-                            elif msg_usrname == '【米粉】CP然' or msg_usrname == '【米粉】Rose肉丝':
-                                try:
-                                    self.send_msg ('[亲亲]'*ci)
-                                    # kkk = numpy.random.choice([1,2,3], p=[0.2,0.5,0.3])
-                                    # if kkk == 1 :
-                                    #     self.send_msg('[疑问]'*ci)
-                                    # elif kkk==2:
-                                    #     self.send_msg2 ('[疑问]')
-                                    # else:
-                                    #     self.send_msg('[流汗]'*ci)
-                                    pass
-                                except:
-                                    pass
+                        if (re.search('灵敏度' , id_msg) or re.search('键位设置' , id_msg)) and (not i.find('span',{'class':'name J_userMenu'}).text == '【米粉】仿生猪猪') and (datetime.now() - linmindu).total_seconds() > 10:
+                            try:
+#                                self.send_msg ('灵敏度键位设置搜索新浪微博：虎牙炒米粉，置顶就有')
+                                self.send_msg ('灵敏度键位设置搜索: 虎牙炒米粉')
+                                self.send_msg ('在wb置顶')
+                                linmindu = datetime.now()
+                            except:
+                                pass
+                        if (re.search('怎.进群' , id_msg) or re.search('如何进群' , id_msg)) and (datetime.now() - linmindu).total_seconds() > 10:
+                            try:
+                                self.send_msg ('加主播公告微信')
+                                self.send_msg ('MFen521')
+                                self.send_msg ('进粉丝群')
+                                linmindu = datetime.now()
+                            except:
+                                pass
+                        # elif re.search('猪猪' , id_msg):
+                        #     msg_usrname=i.find('span',{'class':'name J_userMenu'}).text
+                        #     if msg_usrname in ['【米粉】甜筒很机智' ,'【米粉】卡卡西很坚强', '【米粉】CP然' , '【米粉】Rose肉丝']:
+                        #         try:                                    
+                        #             self.send_msg ('[亲亲]'*ci)                                
+                        #         except:
+                        #             pass
                                 
                         elif re.search('666' , id_msg) and not i.find('span',{'class':'name J_userMenu'}).text == '【米粉】店小二':
                             count_66[0] += 1
-                            if count_66[0] > 3 and (datetime.now() - count_66[1]).total_seconds() > 20 :
+                            if count_66[0] > 7 and (datetime.now() - count_66[1]).total_seconds() > 20 :
                                 try:
                                     self.send_msg ('666[赞][赞][赞]')
                                     count_66[0]=0
@@ -239,22 +243,24 @@ class huya_info:
                             
                         elif re.search('哈哈哈' , id_msg):
                             count_haha[0] += 1
-                            if count_haha[0] > 3 and  (datetime.now() - count_haha[1]).total_seconds() > 20:
+                            if count_haha[0] > 7 and  (datetime.now() - count_haha[1]).total_seconds() > 20:
                                 try:
                                     self.send_msg ('哈哈'*ci)
                                     count_haha[0]=0
                                     count_haha[1]=datetime.now()
                                 except:
                                     pass
-                        elif re.search('呸呸呸呸' , id_msg):
+                        elif re.search('呸*呸*呸' , id_msg):
                             count_pei[0] += 1
-                            if count_pei[0] > 3 and  (datetime.now() - count_pei[1]).total_seconds() > 20:
+                            if count_pei[0] > 5 and  (datetime.now() - count_pei[1]).total_seconds() > 20:
                                 try:
                                     self.send_msg ('呸呸'*ci)
                                     count_pei[0]=0
                                     count_pei[1]=datetime.now()
                                 except:
                                     pass
+                        elif re.search('下播' , id_msg) and (i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]):
+                            live_close=True
                         print("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
                         
                         fout.writelines("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
@@ -262,9 +268,11 @@ class huya_info:
                         fout.flush()
         #         return (True, new_gift)
         # return (False,new_gift)
+        # block huya.driver.find_elements_by_xpath("//span[@class='cont-item name J_userMenu' and text()='xx']")[0].click()
+        # huya.driver.find_element_by_class_name("ucard-btn--3t2-NbGULqNvL_XcZxTVvB").click()
         
     def login (self):
-        time.sleep(10)
+        time.sleep(2)
         #you can log into your account by loading the cookies
         if Path("./cookies.pkl").is_file():
             cookies = pickle.load(open("cookies.pkl", "rb"))
@@ -292,12 +300,14 @@ class huya_info:
         send_btn.click()
         #if send is not allowed, the msg will be cleared
         self.driver.find_element_by_id('pub_msg_input').clear()
+        time.sleep(2)
     def send_msg2 (self, msg):
         JS_ADD_TEXT_TO_INPUT = """
         var elm = arguments[0], txt = arguments[1];
         elm.value += txt;
         elm.dispatchEvent(new Event('change'));
         """
+        #punch emoji
         text = u'\ud83d\udc4a'
         
         input_text = self.driver.find_element_by_id('pub_msg_input')
@@ -317,12 +327,26 @@ class huya_info:
 #        ocr1 = CnOcr(cand_alphabet=['0','1','2','3','4','5','6','7','8','9','淘','汰','剩','余'])
 #        self.login()
 #        gameinfo = '[无淘汰数据]'
-        while True:
+        live_close=False
+        id_list=[]
+        while (not live_close):
             time.sleep(10)
             now = datetime.now()
             current_time = now.strftime("%H:%M:%S")
             print("Current Time =", current_time)
             self.soup = BeautifulSoup(self.driver.page_source,features="lxml")
+            
+            data_list = self.soup.findAll("li", {"class": re.compile("J_msg")})
+                                       
+            for i in data_list:
+                if not i['data-id'] in id_list:
+                    id_list.append(i['data-id'])
+                    if i.find("div", {"class": re.compile("msg-nobleSpeak box-noble-level-*|msg-normal")}):
+                        
+                        id_msg = i.find('span',{'class':'msg'}).text
+                        
+                        if re.search('下播' , id_msg) and (i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]):
+                            live_close=True
             if self.msg and self.gift_info()[0]:
                 try:
                     self.send_msg()
@@ -355,7 +379,9 @@ if __name__ == '__main__':
     now = datetime.now()
     a = customTime(now)        
     start_dt = datetime.strptime(time.strftime('%H:%M:%S', a), '%H:%M:%S')
-    time.sleep((end_dt - start_dt).total_seconds())
+    if (end_dt - start_dt).total_seconds() > 0:
+        time.sleep((end_dt - start_dt).total_seconds())
     huya = huya_info(room_id = '97796', msg = False, debug = True)
       #huya.run()
     huya.gift_msg()
+    huya.driver.close()

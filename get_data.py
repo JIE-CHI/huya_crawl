@@ -13,7 +13,8 @@ if __name__ == '__main__':
     now = datetime.now()
     a = customTime(now)        
     start_dt = datetime.strptime(time.strftime('%H:%M:%S', a), '%H:%M:%S')
-    time.sleep((end_dt - start_dt).total_seconds())
+    if (end_dt - start_dt).total_seconds() > 0:
+        time.sleep((end_dt - start_dt).total_seconds())
     huya = huya_info(room_id = '97796', msg = False, debug = False,headless=True)
     huya.run()
 #     huya.gift_msg()
