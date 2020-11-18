@@ -143,7 +143,7 @@ class huya_info:
         print("已成功连接房间 ： %s"%self.room_id)
         self.logger.info("已成功连接房间 ： %s"%self.room_id)
         self.login()
-        msg_usr=[]
+        msg_usr=['【米粉】仿生猪猪']
         id_list=[]
         gift_dict=defaultdict(int)
         msg_folder = "./msgs/%s"%today
@@ -153,12 +153,29 @@ class huya_info:
         count_haha = [0,now ] 
         count_pei = [0,now ] 
         linmindu = now
-        live_close=False
+        mingtianjian=0
+        live_close=True
+        while (live_close):
+            try:
+                #the easiest way to check if the live is on
+                soup1 = BeautifulSoup(self.driver.page_source,features="lxml")
+                vip_count = soup1.findAll("span", {"class": "week-rank__btn J_rankTabVip"})[0].text
+                vip_count = vip_count.split('(')[1][:-1]
+                live_close=False
+            except:
+                print('直播未开始或房间连接失败')
+                time.sleep(60)
+                self.driver.refresh()
+        rose_msg = now
         while (not live_close):
             now = datetime.now()
             tag = now.strftime("%H:%M:%S")
             self.soup = BeautifulSoup(self.driver.page_source,features="lxml")
-
+            
+            if  (now - rose_msg).total_seconds() > 60*6:
+                rose_msg = now
+                msg = random.choice(['10个荧光棒卡牌子～7级进群 跟米粉一起不定期水友赛[心动]','没有清虎粮的朋友可以清清虎粮[送花][送花][送花]'])
+                self.send_msg (msg)
             #document what people usually say when watching livestream
             data_list = self.soup.findAll("li", {"class": re.compile("J_msg")})
                                        
@@ -171,6 +188,8 @@ class huya_info:
                         user_name = i.find('span',{'class':'cont-item name J_userMenu'}).text
                         if i.find('img')['alt'] in self.gift_prices:
                             gift_price = self.gift_prices[i.find('img')['alt']] 
+                                
+                            
                         else:
                             gift_price = 0.1
                         gift_count1 = i.find_all('span',{'class':'cont-item'})[3].text
@@ -189,9 +208,14 @@ class huya_info:
                                 msg_usr.append(user_name)
                             except:
                                 pass
-                            if len(msg_usr) > 5:
-                                msg_usr=[]
+                            if len(msg_usr) > 6:
+                                msg_usr=['【米粉】仿生猪猪']
                                 gift_dict=defaultdict(int)
+                    elif  i.find("div", {"class": re.compile("msg-noble noble-recharge noble-recharge-level")}):
+                        try:
+                            self.send_msg ('哇'*ci)
+                        except:
+                                pass
                     elif i.find("div", {"class": re.compile("msg-nobleSpeak box-noble-level-*|msg-normal")}):
                         
                         id_msg = i.find('span',{'class':'msg'}).text
@@ -218,19 +242,37 @@ class huya_info:
                         if (re.search('怎.进群' , id_msg) or re.search('如何进群' , id_msg)) and (datetime.now() - linmindu).total_seconds() > 10:
                             try:
                                 self.send_msg ('加主播公告微信')
-                                self.send_msg ('MFen521')
+                                self.send_msg ('MFen521 或者 MFen796')
                                 self.send_msg ('进粉丝群')
                                 linmindu = datetime.now()
                             except:
                                 pass
+                        if re.search('明天见' , id_msg):
+                            mingtianjian+=1
+                            if i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]:                               
+                                live_close=True
+                            elif mingtianjian > 6:
+                                self.send_msg ('下播了 明天见')
+                                live_close=True
+                        if re.search('下播' , id_msg) and i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]:
+                            live_close=True
+                            
                         # elif re.search('猪猪' , id_msg):
+                        #     msg_lists=['[亲亲]'*ci,'222','www'*ci]
+                        #     msg=random.choices(population=msg_lists,weights=[0.3, 0.3, 0.4])[0]  
                         #     msg_usrname=i.find('span',{'class':'name J_userMenu'}).text
                         #     if msg_usrname in ['【米粉】甜筒很机智' ,'【米粉】卡卡西很坚强', '【米粉】CP然' , '【米粉】Rose肉丝']:
-                        #         try:                                    
-                        #             self.send_msg ('[亲亲]'*ci)                                
+                        #         try:   
+                        #             self.send_msg (msg)                                    
+                             
                         #         except:
                         #             pass
-                                
+
+
+
+
+
+                        #             self.send_msg ('[亲亲]'*ci)                                   
                         elif re.search('666' , id_msg) and not i.find('span',{'class':'name J_userMenu'}).text == '【米粉】店小二':
                             count_66[0] += 1
                             if count_66[0] > 7 and (datetime.now() - count_66[1]).total_seconds() > 20 :
@@ -259,8 +301,6 @@ class huya_info:
                                     count_pei[1]=datetime.now()
                                 except:
                                     pass
-                        elif re.search('下播' , id_msg) and (i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]):
-                            live_close=True
                         print("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
                         
                         fout.writelines("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
@@ -284,13 +324,13 @@ class huya_info:
             # sometimes you have to use huya app to scan the QR code at the first time
             self.driver.find_element_by_id("nav-login").click()
             time.sleep(30)
-            self.driver.switch_to.frame("UDBSdkLgn_iframe")
-            time.sleep(10)
-            self.driver.find_element_by_class_name("input-login").click()
-            self.driver.find_element_by_xpath('//div[@class="udb-input-item"]//input[@placeholder="手机号/虎牙号"]').send_keys("***")
-            self.driver.find_element_by_xpath("//input[@placeholder='密码']").send_keys("***")
+#            self.driver.switch_to.frame("UDBSdkLgn_iframe")
+#            time.sleep(10)
+#            self.driver.find_element_by_class_name("input-login").click()
+#            self.driver.find_element_by_xpath('//div[@class="udb-input-item"]//input[@placeholder="手机号/虎牙号"]').send_keys("***")
+#            self.driver.find_element_by_xpath("//input[@placeholder='密码']").send_keys("***")
             
-            self.driver.find_element_by_id("login-btn").click()
+#            self.driver.find_element_by_id("login-btn").click()
             pickle.dump(self.driver.get_cookies() , open("cookies.pkl","wb"))
     def send_msg (self, msg):
         input_text = self.driver.find_element_by_id('pub_msg_input')
@@ -345,7 +385,7 @@ class huya_info:
                         
                         id_msg = i.find('span',{'class':'msg'}).text
                         
-                        if re.search('下播' , id_msg) and (i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]):
+                        if (re.search('下播' , id_msg)) and (i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]):
                             live_close=True
             if self.msg and self.gift_info()[0]:
                 try:
