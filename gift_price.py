@@ -34,9 +34,11 @@ data['火箭登陆'] = 10000
 
 data['超粉卡.'] = 6
 data['超火'] = 0.1
+data['魔法指环'] = 0.1
 data['钻心'] = 6
 data['守护之盾'] = 66
 data['海洋之心'] = 5000
+data['星光卡'] = 6
 with open('gift_price.txt', 'w') as outfile:
     json.dump(data, outfile)
 
