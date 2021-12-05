@@ -174,7 +174,7 @@ class huya_info:
             
             if  (now - rose_msg).total_seconds() > 60*6:
                 rose_msg = now
-                msg = random.choice(['10个荧光棒卡牌子～7级进群 跟米粉一起不定期水友赛[心动]','没有清虎粮的朋友可以清清虎粮[送花][送花][送花]'])
+                msg = random.choice(['test1','test2'])
                 self.send_msg (msg)
             #document what people usually say when watching livestream
             data_list = self.soup.findAll("li", {"class": re.compile("J_msg")})
@@ -213,7 +213,7 @@ class huya_info:
                                 gift_dict=defaultdict(int)
                     elif  i.find("div", {"class": re.compile("msg-noble noble-recharge noble-recharge-level")}):
                         try:
-                            self.send_msg ('哇'*ci)
+                            self.send_msg ('a'*ci)
                         except:
                                 pass
                     elif i.find("div", {"class": re.compile("msg-nobleSpeak box-noble-level-*|msg-normal")}):
@@ -231,7 +231,7 @@ class huya_info:
                                 self.send_msg ('主播耳机: 金士顿云雀')
                             except:
                                 pass
-                        if (re.search('灵敏度' , id_msg) or re.search('键位设置' , id_msg)) and (not i.find('span',{'class':'name J_userMenu'}).text == '【米粉】仿生猪猪') and (datetime.now() - linmindu).total_seconds() > 10:
+                        if (re.search('灵敏度' , id_msg) or re.search('键位设置' , id_msg)) and (not i.find('span',{'class':'name J_userMenu'}).text == msg_usr[0]) and (datetime.now() - linmindu).total_seconds() > 10:
                             try:
 #                                self.send_msg ('灵敏度键位设置搜索新浪微博：虎牙炒米粉，置顶就有')
                                 self.send_msg ('灵敏度键位设置搜索: 虎牙炒米粉')
@@ -249,58 +249,17 @@ class huya_info:
                                 pass
                         if re.search('明天见' , id_msg):
                             mingtianjian+=1
-                            if i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]:                               
+                            if i.find('span',{'class':'name J_userMenu'}).text in msg_usr:                               
                                 live_close=True
                             elif mingtianjian > 6:
                                 self.send_msg ('下播了 明天见')
                                 live_close=True
-                        if re.search('下播' , id_msg) and i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]:
+                        if re.search('下播' , id_msg) and i.find('span',{'class':'name J_userMenu'}).text in msg_usr:
                             live_close=True
                             
-                        # elif re.search('猪猪' , id_msg):
-                        #     msg_lists=['[亲亲]'*ci,'222','www'*ci]
-                        #     msg=random.choices(population=msg_lists,weights=[0.3, 0.3, 0.4])[0]  
-                        #     msg_usrname=i.find('span',{'class':'name J_userMenu'}).text
-                        #     if msg_usrname in ['【米粉】甜筒很机智' ,'【米粉】卡卡西很坚强', '【米粉】CP然' , '【米粉】Rose肉丝']:
-                        #         try:   
-                        #             self.send_msg (msg)                                    
-                             
-                        #         except:
-                        #             pass
 
 
 
-
-
-                        #             self.send_msg ('[亲亲]'*ci)                                   
-                        elif re.search('666' , id_msg) and not i.find('span',{'class':'name J_userMenu'}).text == '【米粉】店小二':
-                            count_66[0] += 1
-                            if count_66[0] > 7 and (datetime.now() - count_66[1]).total_seconds() > 20 :
-                                try:
-                                    self.send_msg ('666[赞][赞][赞]')
-                                    count_66[0]=0
-                                    count_66[1]=datetime.now()
-                                except:
-                                    pass
-                            
-                        elif re.search('哈哈哈' , id_msg):
-                            count_haha[0] += 1
-                            if count_haha[0] > 7 and  (datetime.now() - count_haha[1]).total_seconds() > 20:
-                                try:
-                                    self.send_msg ('哈哈'*ci)
-                                    count_haha[0]=0
-                                    count_haha[1]=datetime.now()
-                                except:
-                                    pass
-                        elif re.search('呸*呸*呸' , id_msg):
-                            count_pei[0] += 1
-                            if count_pei[0] > 5 and  (datetime.now() - count_pei[1]).total_seconds() > 20:
-                                try:
-                                    self.send_msg ('呸呸'*ci)
-                                    count_pei[0]=0
-                                    count_pei[1]=datetime.now()
-                                except:
-                                    pass
                         print("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
                         
                         fout.writelines("%s - %s : %s" %(tag,i.find('span',{'class':'name J_userMenu'}).text,id_msg))
@@ -385,7 +344,7 @@ class huya_info:
                         
                         id_msg = i.find('span',{'class':'msg'}).text
                         
-                        if (re.search('下播' , id_msg)) and (i.find('span',{'class':'name J_userMenu'}).text in ['【米粉】仿生猪猪', '池三斗' ]):
+                        if (re.search('下播' , id_msg)) and (i.find('span',{'class':'name J_userMenu'}).text in msg_usr):
                             live_close=True
             if self.msg and self.gift_info()[0]:
                 try:
